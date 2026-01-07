@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Telemedicina</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f4f7fa; margin: 0; padding: 0; color: #333; }
+        .page { display: none; padding: 20px; max-width: 1200px; margin: auto; }
+        .sidebar { width: 250px; background: #007bff; color: white; height: 100vh; position: fixed; padding: 20px; box-sizing: border-box; }
+        .sidebar a, .sidebar button { display: block; color: white; text-decoration: none; padding: 10px; margin: 10px 0; border-radius: 5px; background: none; border: none; cursor: pointer; transition: background 0.3s; }
+        .sidebar a:hover, .sidebar button:hover { background: #0056b3; }
+        .main { margin-left: 250px; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0; }
+        input, select, button { padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { background: #007bff; color: white; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #0056b3; }
+        #loginPage, #registerPage { background: linear-gradient(135deg, #007bff, #00c8ff); display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #loginPage .container, #registerPage .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 400px; width: 100%; text-align: center; }
+        #codeField { display: none; }
+        #errorMessage { color: red; font-size: 14px; }
+        a { color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <!-- Página de Login -->
+    <div id="loginPage" class="page">
+        <div class="container">
+            <h1>Plataforma de Telemedicina</h1>
+            <form id="authForm">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Senha" required>
+                <button type="submit">Entrar</button>
+            </form>
+            <p id="errorMessage"></p>
+            <p>Não tem conta? <a href="register.html" onclick="showPage('registerPage')">Cadastrar Conta</a></p>
+        </div>
+    </div>
+
+    <!-- Página de Cadastro -->
+    <div id="registerPage" class="page">
+        <div class="container">
+            <h1>Cadastrar Conta</h1>
+            <form id="registerForm">
+                <input type="email" id="regEmail" placeholder="Email" required>
+                <input type="password" id="regPassword" placeholder="Senha" required>
+                <select id="regRole" required>
+                    <option value="">Selecione o Papel</option>
+                    <option value="patient">Paciente</option>
+                    <option value="doctor">Médico</option>
+                    <option value="attendant">Atendente</option>
+                    <option value="manager">Gerente</option>
+                </select>
+                <div id="codeField">
+                    <input type="text" id="invitationCode" placeholder="Código de Convite (obrigatório para não-pacientes)">
+                </div>
+                <button type="submit">Cadastrar</button>
+            </form>
+            <p id="regErrorMessage"></p>
+            <p>Já tem conta? <a href="#" onclick="showPage('loginPage')">Fazer Login</a></p>
+        </div>
+    </div>
+
+    <!-- Dashboard Paciente -->
+    <div id="patientDashboard" class="page">
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <a href="#" onclick="showPage('schedulePage')">Agendar Consulta</a>
+            <a href="#" onclick="showPage('profilePage')">Perfil</a>
+            <button onclick="logout()">Sair</button>
+        </div>
+        <div class="main">
+            <h1>Dashboard do Paciente</h1>
+            <div class="card">
+                <h3>Próximas Consultas</h3>
+                <ul id="patientAppointments"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Médico -->
+    <div id="doctorDashboard" class="page">
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <a href="#" onclick="showPage('consultationsPage')">Consultas</a>
+            <a href="#" onclick="showPage('profilePage')">Perfil</a>
+            <button onclick="logout()">Sair</button>
+        </div>
+        <div class="main">
+            <h1>Dashboard do Médico</h1>
+            <div class="card">
+                <h3>Gerencie Consultas</h3>
+                <p>Acesse a lista de consultas para iniciar sessões.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Atendente -->
+    <div id="attendantDashboard" class="page">
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <a href="#" onclick="showPage('schedulePage')">Agendar Consulta</a>
+            <a href="#" onclick="showPage('profilePage')">Perfil</a>
+            <button onclick="logout()">Sair</button>
+        </div>
+        <div class="main">
+            <h1>Dashboard do Atendente</h1>
+            <div class="card">
+                <h3>Agendamentos</h3>
+                <p>Gerencie agendamentos de pacientes.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Gerente -->
+    <div id="managerDashboard" class="page">
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <a href="#" onclick="showPage('reportsPage')">Relatórios</a>
+            <a href="#" onclick="showPage('profilePage')">Perfil</a>
+            <button onclick="logout()">Sair</button>
+        </div>
+        <div class="main">
+            <h1>Dashboard do Gerente</h1>
+            <div class="card">
+                <h3>Gerar Código de Convite</h3>
+                <select id="inviteRole">
+                    <option value="doctor">Médico</option>
+                    <option value="attendant">Atendente</option>
+                    <option value="manager">Gerente</option>
+                </select>
+                <button onclick="generateCode()">Gerar Código</button>
+                <p id="generatedCode"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Página de Agendamento -->
+    <div id="schedulePage" class="page">
+        <div class="sidebar"><!-- Menu dinâmico --></div>
+        <div class="main">
+            <h1>Agendar Consulta</h1>
+            <form id="scheduleForm">
+                <input type="date" id="scheduleDate" required>
+                <input type="text" id="scheduleDesc" placeholder="Descrição" required>
+                <button type="submit">Agendar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Página de Consultas -->
+    <div id="consultationsPage" class="page">
+        <div class="sidebar"><!-- Menu dinâmico --></div>
+        <div class="main">
+            <h1>Consultas</h1>
+            <ul id="consultationsList"></ul>
+        </div>
+    </div>
+
+    <!-- Página de Relatórios -->
+    <div id="reportsPage" class="page">
+        <div class="sidebar"><!-- Menu dinâmico --></div>
+        <div class="main">
+            <h1>Relatórios</h1>
+            <div class="card">
+                <h3>Estatísticas</h3>
+                <p id="reportsData">Carregando...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Página de Perfil -->
+    <div id="profilePage" class="page">
+        <div class="sidebar"><!-- Menu dinâmico --></div>
+        <div class="main">
+            <h1>Perfil</h1>
+            <form id="profileForm">
+                <input type="text" id="profileName" placeholder="Nome">
+                <button type="submit">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqJL6oLQypj8JEmI2JV851O1RAjqUE2Js",
+            authDomain: "project-601415655331231140.firebaseapp.com",
+            projectId: "project-601415655331231140",
+            storageBucket: "project-601415655331231140.firebasestorage.app",
+            messagingSenderId: "980308486192",
+            appId: "1:980308486192:web:d43064ae88c3b525b5a5f5",
+            measurementId: "G-NLK6RS0XKP"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let currentUser = null;
+        let currentRole = null;
+        
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(pageId).style.display = 'block';
+            if (pageId.includes('Dashboard')) loadDashboardData(pageId);
+        }
+        
+        function logout() {
+            signOut(auth);
+            showPage('loginPage');
+        }
+        
+        // Login
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = 'Erro: ' + error.message;
+            }
+        });
+        
+        // Cadastro
+        document.getElementById('regRole').addEventListener('change', () => {
+            document.getElementById('codeField').style.display = document.getElementById('regRole').value === 'patient' ? 'none' : 'block';
+        });
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('regRole').value;
+            const code = document.getElementById('invitationCode').value;
+            try {
+                if (role !== 'patient') {
+                    const q = query(collection(db, 'invitationCodes'), where('code', '==', code), where('role', '==', role), where('used', '==', false));
+                    const snap = await getDocs(q);
+                    if (snap.empty) throw new Error('Código inválido.');
+                    await updateDoc(doc(db, 'invitationCodes', snap.docs[0].id), { used: true });
+                }
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                await setDoc(doc(db, 'users', userCred.user.uid), { email, role, createdAt: new Date() });
+                alert('Conta criada!');
+                showPage('loginPage');
+            } catch (error) {
+                document.getElementById('regErrorMessage').textContent = 'Erro: ' + error.message;
+            }
+        });
+        
+        // Gerar Código (Gerente)
+        window.generateCode = async () => {
+            const role = document.getElementById('inviteRole').value;
+            const code = Math.random().toString(36).substring(2, 15);
+            await addDoc(collection(db, 'invitationCodes'), { code, role, used: false, createdBy: currentUser.uid });
+            document.getElementById('generatedCode').textContent = `Código: ${code}`;
+        };
+        
+        // Carregar Dados do Dashboard
+        async function loadDashboardData(pageId) {
+            if (pageId === 'patientDashboard') {
+                const list = document.getElementById('patientAppointments');
+                list.innerHTML = '';
+                const q = query(collection(db, 'appointments'), where('patientId', '==', currentUser.uid));
+                const snap = await getDocs(q);
+                snap.forEach(doc => {
+                    const li = document.createElement('li');
+                    li.textContent = `${doc.data().date} - ${doc.data().description}`;
+                    list.appendChild(li);
+                });
+            } else if (pageId === 'consultationsPage') {
+                const list = document.getElementById('consultationsList');
+                list.innerHTML = '';
+                const snap = await getDocs(collection(db, 'consultations'));
+                snap.forEach(doc => {
+                    const li = document.createElement('li');
+                    li.textContent = doc.data().description;
+                    list.appendChild(li);
+                });
+            } else if (pageId === 'reportsPage') {
+                const data = document.getElementById('reportsData');
+                const snap = await getDocs(collection(db, 'appointments'));
+                data.textContent = `Total de agendamentos: ${snap.size}`;
+            }
+        }
+        
+        // Agendamento
+        document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('scheduleDate').value;
+            const desc = document.getElementById('scheduleDesc').value;
+            await addDoc(collection(db, 'appointments'), { patientId: currentUser.uid, date, description: desc });
+            alert('Agendado!');
+        });
+        
+        // Auth State
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                currentRole = userDoc.data().role;
+                showPage(`${currentRole}Dashboard`);
+            } else {
+                showPage('loginPage');
+            }
+        });
+    </script>
+</body>
+</html>

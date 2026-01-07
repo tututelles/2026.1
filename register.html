@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Plataforma de Telemedicina</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: linear-gradient(135deg, #007bff, #00c8ff); color: #333; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 400px; width: 100%; text-align: center; }
+        h1 { color: #007bff; margin-bottom: 20px; }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { background: #007bff; color: white; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #0056b3; }
+        #codeField { display: none; } /* Escondido por padrão para pacientes */
+        #errorMessage { color: red; font-size: 14px; }
+        a { color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cadastrar Conta</h1>
+        <form id="registerForm">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Senha" required>
+            <select id="role" required>
+                <option value="">Selecione o Papel</option>
+                <option value="patient">Paciente (Cliente)</option>
+                <option value="doctor">Médico</option>
+                <option value="attendant">Atendente</option>
+                <option value="manager">Gerente</option>
+            </select>
+            <div id="codeField">
+                <input type="text" id="invitationCode" placeholder="Código de Convite (obrigatório para não-pacientes)">
+            </div>
+            <button type="submit">Cadastrar</button>
+        </form>
+        <p id="errorMessage"></p>
+        <p>Já tem conta? <a href="html.html">Fazer Login</a></p>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        
+        // Configuração do Firebase (substitua pelas suas chaves se necessário)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqJL6oLQypj8JEmI2JV851O1RAjqUE2Js",
+            authDomain: "project-601415655331231140.firebaseapp.com",
+            projectId: "project-601415655331231140",
+            storageBucket: "project-601415655331231140.firebasestorage.app",
+            messagingSenderId: "980308486192",
+            appId: "1:980308486192:web:d43064ae88c3b525b5a5f5",
+            measurementId: "G-NLK6RS0XKP"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        const registerForm = document.getElementById('registerForm');
+        const roleSelect = document.getElementById('role');
+        const codeField = document.getElementById('codeField');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        // Mostrar/esconder campo de código baseado no papel selecionado
+        roleSelect.addEventListener('change', () => {
+            if (roleSelect.value === 'patient') {
+                codeField.style.display = 'none';  // Pacientes não precisam de código
+            } else {
+                codeField.style.display = 'block';  // Outros papéis precisam
+            }
+        });
+        
+        // Submissão do formulário
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const role = roleSelect.value;
+            const code = document.getElementById('invitationCode').value;
+            
+            try {
+                // Validação: Se não for paciente, verificar código de convite
+                if (role !== 'patient') {
+                    if (!code) {
+                        throw new Error('Código de convite é obrigatório para este papel.');
+                    }
+                    // Consultar Firestore para validar código
+                    const q = query(
+                        collection(db, 'invitationCodes'),
+                        where('code', '==', code),
+                        where('role', '==', role),
+                        where('used', '==', false)
+                    );
+                    const querySnapshot = await getDocs(q);
+                    if (querySnapshot.empty) {
+                        throw new Error('Código inválido, expirado ou já usado.');
+                    }
+                    // Marcar código como usado
+                    const codeDoc = querySnapshot.docs[0];
+                    await updateDoc(doc(db, 'invitationCodes', codeDoc.id), { used: true });
+                }
+                
+                // Criar conta no Firebase Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                // Salvar dados do usuário no Firestore
+                await setDoc(doc(db, 'users', user.uid), {
+                    email: email,
+                    role: role,
+                    createdAt: new Date()
+                });
+                
+                // Sucesso: Redirecionar para login
+                alert('Conta criada com sucesso! Faça login.');
+                window.location.href = 'index.html';  // Redireciona para a página de login
+                
+            } catch (error) {
+                // Exibir erro
+                errorMessage.textContent = 'Erro no cadastro: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
